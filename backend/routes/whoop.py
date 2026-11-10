@@ -25,18 +25,22 @@ def callback():
 
     try:
         tokens = whoop.exchange_code(code)
+        print(f"WHOOP token response keys: {list(tokens.keys())}")
         profile = whoop.fetch_profile(tokens["access_token"])
 
+        row = {
+            "user_id": g.user_id,
+            "access_token_encrypted": tokens["access_token"],
+            "token_expires_at": (
+                datetime.utcnow() + timedelta(seconds=tokens["expires_in"])
+            ).isoformat(),
+            "whoop_user_id": str(profile["user_id"]),
+        }
+        if tokens.get("refresh_token"):
+            row["refresh_token_encrypted"] = tokens["refresh_token"]
+
         supabase_admin.table("whoop_connections").upsert(
-            {
-                "user_id": g.user_id,
-                "access_token_encrypted": tokens["access_token"],
-                "refresh_token_encrypted": tokens["refresh_token"],
-                "token_expires_at": (
-                    datetime.utcnow() + timedelta(seconds=tokens["expires_in"])
-                ).isoformat(),
-                "whoop_user_id": str(profile["user_id"]),
-            },
+            row,
             on_conflict="user_id",
         ).execute()
 
