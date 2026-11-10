@@ -1,4 +1,5 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useSearchParams } from 'react-router-dom'
+import { Spinner } from '@blueprintjs/core'
 import { useAuth } from './hooks/useAuth'
 import { Layout } from './components/Layout'
 import { LoginPage } from './pages/LoginPage'
@@ -8,13 +9,21 @@ import { FinancePage } from './pages/FinancePage'
 import { JournalPage } from './pages/JournalPage'
 import { WhoopCallbackPage } from './pages/WhoopCallbackPage'
 
+function HealthRoute() {
+  const [searchParams] = useSearchParams()
+  if (searchParams.has('code') || searchParams.has('error')) {
+    return <Navigate to={`/auth/whoop/callback?${searchParams.toString()}`} replace />
+  }
+  return <HealthPage />
+}
+
 export default function App() {
   const { user, loading, signIn, signUp, signOut } = useAuth()
 
   if (loading) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>
-        <div style={{ color: 'var(--fg-muted)', fontFamily: 'var(--font-display)' }}>Loading...</div>
+        <Spinner size={32} aria-label="Loading Life Tracker" />
       </div>
     )
   }
@@ -27,7 +36,7 @@ export default function App() {
     <Layout user={user} onSignOut={signOut}>
       <Routes>
         <Route path="/" element={<DashboardPage />} />
-        <Route path="/health" element={<HealthPage />} />
+        <Route path="/health" element={<HealthRoute />} />
         <Route path="/finance" element={<FinancePage />} />
         <Route path="/journal" element={<JournalPage />} />
         <Route path="/auth/whoop/callback" element={<WhoopCallbackPage />} />

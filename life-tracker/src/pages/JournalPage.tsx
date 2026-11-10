@@ -1,7 +1,8 @@
+import { Button, Card, TextArea } from '@blueprintjs/core'
 import { useState, useEffect, useCallback } from 'react'
 import { BookOpen, ChevronLeft, ChevronRight, Save, Smile } from 'lucide-react'
 import { supabase } from '../lib/supabase'
-import type { JournalEntry, JournalPrompt, JournalResponse } from '../lib/types'
+import type { JournalEntry, JournalPrompt } from '../lib/types'
 
 const MOOD_LABELS = ['', 'Awful', 'Bad', 'Poor', 'Low', 'Meh', 'Okay', 'Good', 'Great', 'Amazing', 'Perfect']
 const ENERGY_LABELS = ['', 'Exhausted', 'Drained', 'Tired', 'Low', 'Average', 'Fine', 'Energized', 'Strong', 'Fired Up', 'Unstoppable']
@@ -118,28 +119,28 @@ export function JournalPage() {
           <h1 style={{ fontSize: '1.5rem', marginBottom: 2 }}>Journal</h1>
           <p style={{ color: 'var(--fg-muted)', fontSize: '0.9rem' }}>Daily reflections, mood, and energy</p>
         </div>
-        <button className="btn btn-primary" onClick={handleSave} disabled={saving}>
+        <Button intent="primary" onClick={handleSave} disabled={saving}>
           <Save size={14} /> {saving ? 'Saving...' : saved ? 'Saved!' : 'Save Entry'}
-        </button>
+        </Button>
       </div>
 
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16,
         marginBottom: 28,
       }}>
-        <button className="btn btn-ghost" onClick={() => changeDate(-1)} style={{ padding: 8 }}>
+        <Button minimal aria-label="Previous day" onClick={() => changeDate(-1)} style={{ padding: 8 }}>
           <ChevronLeft size={18} />
-        </button>
+        </Button>
         <div style={{ textAlign: 'center', minWidth: 200 }}>
           <div style={{ fontWeight: 600, fontSize: '1rem' }}>{dateLabel}</div>
           {isToday && <span style={{ fontSize: '0.75rem', color: 'var(--accent)' }}>Today</span>}
         </div>
-        <button className="btn btn-ghost" onClick={() => changeDate(1)} disabled={isToday} style={{ padding: 8, opacity: isToday ? 0.3 : 1 }}>
+        <Button minimal aria-label="Next day" onClick={() => changeDate(1)} disabled={isToday} style={{ padding: 8, opacity: isToday ? 0.3 : 1 }}>
           <ChevronRight size={18} />
-        </button>
+        </Button>
       </div>
 
-      <div className="card" style={{ marginBottom: 20 }}>
+      <Card className="panel" style={{ marginBottom: 20 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
           <Smile size={16} color="var(--journal)" />
           <h3 style={{ fontSize: '0.95rem' }}>How are you feeling?</h3>
@@ -154,16 +155,16 @@ export function JournalPage() {
           </div>
           <div style={{ display: 'flex', gap: 4 }}>
             {[1,2,3,4,5,6,7,8,9,10].map(n => (
-              <button key={n} onClick={() => setMoodScore(n)} style={{
-                flex: 1, height: 34, borderRadius: 'var(--radius-xs)', border: '1px solid var(--border)',
+              <Button key={n} aria-label={`Mood ${n} of 10`} aria-pressed={n === moodScore} onClick={() => setMoodScore(n)} style={{
+                flex: 1, minWidth: 0, padding: 0, height: 34, borderRadius: 'var(--radius-xs)', border: '1px solid var(--border)',
                 cursor: 'pointer',
                 background: n <= moodScore ? 'var(--journal)' : 'var(--bg-subtle)',
-                color: n <= moodScore ? '#fff' : 'var(--fg-muted)',
+                color: n <= moodScore ? 'var(--bg)' : 'var(--fg-muted)',
                 fontWeight: 600, fontSize: '0.8rem',
                 transition: 'all 0.15s',
               }}>
                 {n}
-              </button>
+              </Button>
             ))}
           </div>
         </div>
@@ -177,22 +178,22 @@ export function JournalPage() {
           </div>
           <div style={{ display: 'flex', gap: 4 }}>
             {[1,2,3,4,5,6,7,8,9,10].map(n => (
-              <button key={n} onClick={() => setEnergyScore(n)} style={{
-                flex: 1, height: 34, borderRadius: 'var(--radius-xs)', border: '1px solid var(--border)',
+              <Button key={n} aria-label={`Energy ${n} of 10`} aria-pressed={n === energyScore} onClick={() => setEnergyScore(n)} style={{
+                flex: 1, minWidth: 0, padding: 0, height: 34, borderRadius: 'var(--radius-xs)', border: '1px solid var(--border)',
                 cursor: 'pointer',
                 background: n <= energyScore ? 'var(--accent)' : 'var(--bg-subtle)',
-                color: n <= energyScore ? '#fff' : 'var(--fg-muted)',
+                color: n <= energyScore ? 'var(--bg)' : 'var(--fg-muted)',
                 fontWeight: 600, fontSize: '0.8rem',
                 transition: 'all 0.15s',
               }}>
                 {n}
-              </button>
+              </Button>
             ))}
           </div>
         </div>
-      </div>
+      </Card>
 
-      <div className="card" style={{ marginBottom: 20 }}>
+      <Card className="panel" style={{ marginBottom: 20 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
           <BookOpen size={16} color="var(--accent)" />
           <h3 style={{ fontSize: '0.95rem' }}>Guided Prompts</h3>
@@ -206,8 +207,8 @@ export function JournalPage() {
               }}>
                 {p.text}
               </label>
-              <textarea
-                className="input"
+              <TextArea
+                fill
                 placeholder="Write your thoughts..."
                 value={responses[p.id] ?? ''}
                 onChange={e => setResponses(prev => ({ ...prev, [p.id]: e.target.value }))}
@@ -216,18 +217,18 @@ export function JournalPage() {
             </div>
           ))}
         </div>
-      </div>
+      </Card>
 
-      <div className="card">
+      <Card className="panel">
         <h3 style={{ fontSize: '0.95rem', marginBottom: 12 }}>Free Writing</h3>
-        <textarea
-          className="input"
+        <TextArea
+          fill
           placeholder="Anything else on your mind..."
           value={freeformText}
           onChange={e => setFreeformText(e.target.value)}
           rows={6}
         />
-      </div>
+      </Card>
     </div>
   )
 }

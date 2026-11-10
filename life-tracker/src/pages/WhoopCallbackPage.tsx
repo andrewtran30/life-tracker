@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { Card, Button } from '@blueprintjs/core'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { api } from '../lib/api'
 import { Heart, CheckCircle, XCircle } from 'lucide-react'
@@ -8,8 +9,11 @@ export function WhoopCallbackPage() {
   const navigate = useNavigate()
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading')
   const [error, setError] = useState('')
+  const started = useRef(false)
 
   useEffect(() => {
+    if (started.current) return
+    started.current = true
     const oauthError = searchParams.get('error')
     if (oauthError) {
       setStatus('error')
@@ -38,7 +42,7 @@ export function WhoopCallbackPage() {
     api.whoop.exchangeCode(code)
       .then(() => {
         setStatus('success')
-        setTimeout(() => navigate('/health'), 2000)
+        setTimeout(() => navigate('/health', { replace: true }), 2000)
       })
       .catch(err => {
         setStatus('error')
@@ -48,7 +52,7 @@ export function WhoopCallbackPage() {
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
-      <div className="glass-card" style={{ textAlign: 'center', maxWidth: 400, width: '100%' }}>
+      <Card className="panel" style={{ textAlign: 'center', maxWidth: 400, width: '100%' }}>
         {status === 'loading' && (
           <>
             <Heart size={48} color="var(--health)" style={{ marginBottom: 16 }} />
@@ -68,12 +72,12 @@ export function WhoopCallbackPage() {
             <XCircle size={48} color="var(--danger)" style={{ marginBottom: 16 }} />
             <h3>Connection Failed</h3>
             <p style={{ color: 'var(--fg-muted)', marginTop: 8 }}>{error}</p>
-            <button className="btn btn-secondary" onClick={() => navigate('/health')} style={{ marginTop: 16 }}>
+            <Button  onClick={() => navigate('/health')} style={{ marginTop: 16 }}>
               Back to Health
-            </button>
+            </Button>
           </>
         )}
-      </div>
+      </Card>
     </div>
   )
 }

@@ -1,5 +1,6 @@
+import { Button, Card, InputGroup, HTMLSelect, Dialog, DialogBody, FileInput } from '@blueprintjs/core'
 import { useState, useEffect, useCallback } from 'react'
-import { Wallet, Plus, Upload, X, TrendingDown, TrendingUp } from 'lucide-react'
+import { Wallet, Plus, Upload, TrendingDown, TrendingUp } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { api } from '../lib/api'
 import type { FinanceAccount, Transaction, FinanceCategory } from '../lib/types'
@@ -47,39 +48,39 @@ export function FinancePage() {
           <p style={{ color: 'var(--fg-muted)', fontSize: '0.9rem' }}>Track spending, income, and budgets</p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <button className="btn btn-secondary" onClick={() => setShowCsvImport(true)}><Upload size={13} /> Import CSV</button>
-          <button className="btn btn-primary" onClick={() => setShowAddTx(true)}><Plus size={13} /> Add Transaction</button>
+          <Button  onClick={() => setShowCsvImport(true)}><Upload size={13} /> Import CSV</Button>
+          <Button intent="primary" onClick={() => setShowAddTx(true)}><Plus size={13} /> Add Transaction</Button>
         </div>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 20 }}>
-        <div className="card" style={{ padding: 16 }}>
+        <Card className="panel" style={{ padding: 16 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
             <Wallet size={14} color="var(--accent)" />
             <span className="stat-label">Total Balance</span>
           </div>
           <span className="stat-value" style={{ fontSize: '1.5rem' }}>${totalBalance.toFixed(2)}</span>
-        </div>
-        <div className="card" style={{ padding: 16 }}>
+        </Card>
+        <Card className="panel" style={{ padding: 16 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
             <TrendingDown size={14} color="var(--danger)" />
             <span className="stat-label">Spent This Month</span>
           </div>
           <span className="stat-value" style={{ fontSize: '1.5rem' }}>${monthSpend.toFixed(2)}</span>
-        </div>
-        <div className="card" style={{ padding: 16 }}>
+        </Card>
+        <Card className="panel" style={{ padding: 16 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
             <TrendingUp size={14} color="var(--success)" />
             <span className="stat-label">Income This Month</span>
           </div>
           <span className="stat-value" style={{ fontSize: '1.5rem' }}>${monthIncome.toFixed(2)}</span>
-        </div>
+        </Card>
       </div>
 
-      <div className="card" style={{ marginBottom: 20 }}>
+      <Card className="panel" style={{ marginBottom: 20 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
           <h3 style={{ fontSize: '0.95rem' }}>Accounts</h3>
-          <button className="btn btn-ghost" onClick={() => setShowAddAccount(true)} style={{ fontSize: '0.8rem' }}><Plus size={13} /> Add Account</button>
+          <Button minimal onClick={() => setShowAddAccount(true)} style={{ fontSize: '0.8rem' }}><Plus size={13} /> Add Account</Button>
         </div>
         {accounts.length === 0 ? (
           <p style={{ color: 'var(--fg-muted)', textAlign: 'center', padding: 16, fontSize: '0.9rem' }}>No accounts yet. Add one to start tracking.</p>
@@ -99,9 +100,9 @@ export function FinancePage() {
             ))}
           </div>
         )}
-      </div>
+      </Card>
 
-      <div className="card">
+      <Card className="panel">
         <h3 style={{ fontSize: '0.95rem', marginBottom: 14 }}>Recent Transactions</h3>
         {transactions.length === 0 ? (
           <p style={{ color: 'var(--fg-muted)', textAlign: 'center', padding: 16, fontSize: '0.9rem' }}>No transactions yet. Add one manually or import a CSV.</p>
@@ -131,7 +132,7 @@ export function FinancePage() {
             ))}
           </div>
         )}
-      </div>
+      </Card>
 
       {showAddAccount && <Modal title="Add Account" onClose={() => setShowAddAccount(false)}>
         <AddAccountForm onSave={async (name, type, balance) => {
@@ -161,18 +162,9 @@ export function FinancePage() {
 
 function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
   return (
-    <div style={{
-      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.3)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100,
-    }} onClick={e => { if (e.target === e.currentTarget) onClose() }}>
-      <div className="card" style={{ width: 440, maxHeight: '90vh', overflow: 'auto', boxShadow: 'var(--shadow)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
-          <h3 style={{ fontSize: '1rem' }}>{title}</h3>
-          <button className="btn btn-ghost" onClick={onClose} style={{ padding: 4 }}><X size={16} /></button>
-        </div>
-        {children}
-      </div>
-    </div>
+    <Dialog isOpen title={title} onClose={onClose} className="bp6-dark" style={{ width: 460, maxWidth: 'calc(100vw - 32px)' }}>
+      <DialogBody>{children}</DialogBody>
+    </Dialog>
   )
 }
 
@@ -182,14 +174,14 @@ function AddAccountForm({ onSave }: { onSave: (name: string, type: string, balan
   const [balance, setBalance] = useState('')
   return (
     <form onSubmit={e => { e.preventDefault(); onSave(name, type, parseFloat(balance) || 0) }} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-      <div><label className="label">Account Name</label><input className="input" value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Chase Checking" required /></div>
+      <div><label className="label">Account Name</label><InputGroup fill value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Chase Checking" required /></div>
       <div><label className="label">Type</label>
-        <select className="input" value={type} onChange={e => setType(e.target.value)}>
+        <HTMLSelect fill value={type} onChange={e => setType(e.target.value)}>
           <option value="checking">Checking</option><option value="savings">Savings</option>
           <option value="credit">Credit Card</option><option value="cash">Cash</option><option value="investment">Investment</option>
-        </select></div>
-      <div><label className="label">Current Balance</label><input className="input" type="number" step="0.01" value={balance} onChange={e => setBalance(e.target.value)} placeholder="0.00" /></div>
-      <button className="btn btn-primary" type="submit" style={{ width: '100%', justifyContent: 'center' }}>Add Account</button>
+        </HTMLSelect></div>
+      <div><label className="label">Current Balance</label><InputGroup fill type="number" step="0.01" value={balance} onChange={e => setBalance(e.target.value)} placeholder="0.00" /></div>
+      <Button intent="primary" type="submit" style={{ width: '100%', justifyContent: 'center' }}>Add Account</Button>
     </form>
   )
 }
@@ -208,26 +200,26 @@ function AddTransactionForm({ accounts, categories, onSave }: {
     <form onSubmit={e => { e.preventDefault(); onSave({ account_id: accountId, category_id: categoryId || null, amount: parseFloat(amount), description, date, type }) }}
       style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
       <div><label className="label">Account</label>
-        <select className="input" value={accountId} onChange={e => setAccountId(e.target.value)} required>
+        <HTMLSelect fill value={accountId} onChange={e => setAccountId(e.target.value)} required>
           {accounts.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
-        </select></div>
+        </HTMLSelect></div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
         <div><label className="label">Type</label>
-          <select className="input" value={type} onChange={e => setType(e.target.value)}>
+          <HTMLSelect fill value={type} onChange={e => setType(e.target.value)}>
             <option value="debit">Expense</option><option value="credit">Income</option>
-          </select></div>
-        <div><label className="label">Amount</label><input className="input" type="number" step="0.01" min="0.01" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00" required /></div>
+          </HTMLSelect></div>
+        <div><label className="label">Amount</label><InputGroup fill type="number" step="0.01" min="0.01" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00" required /></div>
       </div>
-      <div><label className="label">Description</label><input className="input" value={description} onChange={e => setDescription(e.target.value)} placeholder="What was it for?" /></div>
+      <div><label className="label">Description</label><InputGroup fill value={description} onChange={e => setDescription(e.target.value)} placeholder="What was it for?" /></div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-        <div><label className="label">Date</label><input className="input" type="date" value={date} onChange={e => setDate(e.target.value)} /></div>
+        <div><label className="label">Date</label><InputGroup fill type="date" value={date} onChange={e => setDate(e.target.value)} /></div>
         <div><label className="label">Category</label>
-          <select className="input" value={categoryId} onChange={e => setCategoryId(e.target.value)}>
+          <HTMLSelect fill value={categoryId} onChange={e => setCategoryId(e.target.value)}>
             <option value="">Uncategorized</option>
             {categories.filter(c => type === 'credit' ? c.is_income : !c.is_income).map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
-          </select></div>
+          </HTMLSelect></div>
       </div>
-      <button className="btn btn-primary" type="submit" style={{ width: '100%', justifyContent: 'center' }}>Add Transaction</button>
+      <Button intent="primary" type="submit" style={{ width: '100%', justifyContent: 'center' }}>Add Transaction</Button>
     </form>
   )
 }
@@ -247,22 +239,15 @@ function CsvImportForm({ accounts, onImport }: { accounts: FinanceAccount[]; onI
   return (
     <form onSubmit={e => { e.preventDefault(); onImport(csvContent, accountId) }} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
       <div><label className="label">Account</label>
-        <select className="input" value={accountId} onChange={e => setAccountId(e.target.value)} required>
+        <HTMLSelect fill value={accountId} onChange={e => setAccountId(e.target.value)} required>
           {accounts.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
-        </select></div>
+        </HTMLSelect></div>
       <div>
         <label className="label">CSV File</label>
-        <label style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-          padding: 20, border: '1px dashed var(--border-strong)', borderRadius: 'var(--radius-sm)',
-          cursor: 'pointer', color: 'var(--fg-muted)', fontSize: '0.85rem', background: 'var(--bg-subtle)',
-        }}>
-          <Upload size={14} />{fileName || 'Click to select a CSV file'}
-          <input type="file" accept=".csv" onChange={handleFile} style={{ display: 'none' }} />
-        </label>
+        <FileInput fill text={fileName || 'Choose a CSV file…'} buttonText="Browse" hasSelection={!!fileName} onInputChange={handleFile} inputProps={{ accept: '.csv', 'aria-label': 'CSV file' }} />
       </div>
       <p style={{ fontSize: '0.75rem', color: 'var(--fg-muted)' }}>CSV should have columns: date, description, amount. Most bank exports work.</p>
-      <button className="btn btn-primary" type="submit" disabled={!csvContent} style={{ width: '100%', justifyContent: 'center' }}>Import Transactions</button>
+      <Button intent="primary" type="submit" disabled={!csvContent} style={{ width: '100%', justifyContent: 'center' }}>Import Transactions</Button>
     </form>
   )
 }

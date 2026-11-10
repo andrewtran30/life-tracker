@@ -1,5 +1,6 @@
+import { Card, Button } from '@blueprintjs/core'
 import { useState, useEffect } from 'react'
-import { Moon, Activity, DollarSign, Brain, RefreshCw, Sparkles, TrendingUp, Heart } from 'lucide-react'
+import { Moon, Activity, DollarSign, RefreshCw, Sparkles, TrendingUp, Heart } from 'lucide-react'
 import { api } from '../lib/api'
 import type { DailySummary } from '../lib/types'
 
@@ -54,7 +55,7 @@ export function DashboardPage() {
         <StatCard icon={<Activity size={16} />} label="Mood" value={moodSnap?.mood != null ? `${moodSnap.mood}` : '—'} unit="/10" color="var(--journal)" bg="var(--journal-light)" />
       </div>
 
-      <div className="card" style={{ marginBottom: 20 }}>
+      <Card className="panel" style={{ marginBottom: 20 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div style={{
@@ -71,9 +72,9 @@ export function DashboardPage() {
               </span>
             </div>
           </div>
-          <button className="btn btn-secondary" onClick={handleRegenerate} disabled={regenerating} style={{ fontSize: '0.8rem' }}>
+          <Button  onClick={handleRegenerate} disabled={regenerating} style={{ fontSize: '0.8rem' }}>
             <RefreshCw size={13} /> {regenerating ? 'Generating...' : 'Regenerate'}
-          </button>
+          </Button>
         </div>
 
         {loading ? (
@@ -90,9 +91,9 @@ export function DashboardPage() {
         ) : (
           <TemplateSummary />
         )}
-      </div>
+      </Card>
 
-      <div className="card">
+      <Card className="panel">
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
           <TrendingUp size={16} color="var(--accent)" />
           <h3 style={{ fontSize: '0.95rem' }}>Active Goals</h3>
@@ -100,7 +101,7 @@ export function DashboardPage() {
         <p style={{ color: 'var(--fg-muted)', fontSize: '0.9rem' }}>
           Set goals in each tab to track progress here. The AI summary factors these into daily recommendations.
         </p>
-      </div>
+      </Card>
     </div>
   )
 }
@@ -109,7 +110,7 @@ function StatCard({ icon, label, value, unit, color, bg }: {
   icon: React.ReactNode; label: string; value: string; unit?: string; color: string; bg: string
 }) {
   return (
-    <div className="card" style={{ padding: 16 }}>
+    <Card className="panel" style={{ padding: 16 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
         <div style={{
           width: 28, height: 28, borderRadius: 7,
@@ -124,7 +125,7 @@ function StatCard({ icon, label, value, unit, color, bg }: {
         <span className="stat-value" style={{ fontSize: '1.5rem' }}>{value}</span>
         {unit && <span style={{ fontSize: '0.8rem', color: 'var(--fg-muted)' }}>{unit}</span>}
       </div>
-    </div>
+    </Card>
   )
 }
 
