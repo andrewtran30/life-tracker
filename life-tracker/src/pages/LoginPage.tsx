@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { LayoutDashboard, Mail, Lock, User, ArrowRight } from 'lucide-react'
+import { LayoutDashboard, Mail, Lock, User, ArrowRight, Eye, EyeOff } from 'lucide-react'
 
 interface LoginPageProps {
   onSignIn: (email: string, password: string) => Promise<void>
@@ -13,6 +13,7 @@ export function LoginPage({ onSignIn, onSignUp }: LoginPageProps) {
   const [displayName, setDisplayName] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
   const [confirmationSent, setConfirmationSent] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
@@ -97,8 +98,12 @@ export function LoginPage({ onSignIn, onSignUp }: LoginPageProps) {
             <label className="label">Password</label>
             <div style={{ position: 'relative' }}>
               <Lock size={15} color="var(--fg-muted)" style={{ position: 'absolute', left: 12, top: 10 }} />
-              <input className="input" type="password" placeholder="••••••••" value={password}
-                onChange={e => setPassword(e.target.value)} required minLength={6} style={{ paddingLeft: 36 }} />
+              <input className="input" type={showPassword ? 'text' : 'password'} placeholder="••••••••" value={password}
+                onChange={e => setPassword(e.target.value)} required minLength={6} style={{ paddingLeft: 36, paddingRight: 36 }} />
+              <button type="button" onClick={() => setShowPassword(!showPassword)}
+                style={{ position: 'absolute', right: 10, top: 7, background: 'none', border: 'none', cursor: 'pointer', padding: 2 }}>
+                {showPassword ? <EyeOff size={15} color="var(--fg-muted)" /> : <Eye size={15} color="var(--fg-muted)" />}
+              </button>
             </div>
           </div>
 
