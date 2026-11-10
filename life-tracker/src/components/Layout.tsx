@@ -24,35 +24,34 @@ export function Layout({ user, onSignOut, children }: LayoutProps) {
       <aside style={{
         width: 'var(--sidebar-width)',
         minWidth: 'var(--sidebar-width)',
-        background: 'var(--bg-secondary)',
+        background: 'var(--bg-surface)',
         borderRight: '1px solid var(--border)',
         display: 'flex',
         flexDirection: 'column',
-        padding: '24px 16px',
-        gap: '8px',
+        padding: '20px 12px',
       }}>
         <div style={{
-          fontFamily: 'var(--font-display)',
-          fontSize: '1.25rem',
+          fontSize: '0.95rem',
           fontWeight: 700,
-          color: 'var(--accent)',
-          padding: '8px 12px',
-          marginBottom: '24px',
+          color: 'var(--fg)',
+          padding: '4px 12px',
+          marginBottom: 28,
           display: 'flex',
           alignItems: 'center',
-          gap: '10px',
+          gap: 10,
+          letterSpacing: '-0.01em',
         }}>
           <div style={{
-            width: 32, height: 32, borderRadius: 8,
-            background: 'var(--accent-bg)',
+            width: 28, height: 28, borderRadius: 7,
+            background: 'var(--accent)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
-            <LayoutDashboard size={18} color="var(--accent)" />
+            <LayoutDashboard size={15} color="#fff" />
           </div>
           Life Tracker
         </div>
 
-        <nav style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
+        <nav style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1 }}>
           {NAV_ITEMS.map(({ to, icon: Icon, label }) => {
             const active = location.pathname === to
             return (
@@ -62,18 +61,18 @@ export function Layout({ user, onSignOut, children }: LayoutProps) {
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '12px',
-                  padding: '10px 12px',
+                  gap: '10px',
+                  padding: '8px 12px',
                   borderRadius: 'var(--radius-sm)',
-                  color: active ? 'var(--fg-primary)' : 'var(--fg-muted)',
-                  background: active ? 'var(--accent-bg)' : 'transparent',
+                  color: active ? 'var(--accent-fg)' : 'var(--fg-secondary)',
+                  background: active ? 'var(--accent-light)' : 'transparent',
                   textDecoration: 'none',
-                  fontSize: '0.9rem',
-                  fontWeight: active ? 500 : 400,
-                  transition: 'all 0.15s',
+                  fontSize: '0.875rem',
+                  fontWeight: active ? 600 : 400,
+                  transition: 'all 0.1s',
                 }}
               >
-                <Icon size={18} />
+                <Icon size={16} strokeWidth={active ? 2.5 : 2} />
                 {label}
               </NavLink>
             )
@@ -82,10 +81,10 @@ export function Layout({ user, onSignOut, children }: LayoutProps) {
 
         <div style={{
           borderTop: '1px solid var(--border)',
-          paddingTop: '16px',
+          paddingTop: '12px',
           display: 'flex',
           flexDirection: 'column',
-          gap: '8px',
+          gap: '4px',
         }}>
           <div style={{
             fontSize: '0.8rem',
@@ -100,9 +99,9 @@ export function Layout({ user, onSignOut, children }: LayoutProps) {
           <button
             onClick={onSignOut}
             className="btn btn-ghost"
-            style={{ justifyContent: 'flex-start', width: '100%' }}
+            style={{ justifyContent: 'flex-start', width: '100%', fontSize: '0.8rem' }}
           >
-            <LogOut size={16} />
+            <LogOut size={14} />
             Sign Out
           </button>
         </div>
@@ -111,7 +110,8 @@ export function Layout({ user, onSignOut, children }: LayoutProps) {
       <main style={{
         flex: 1,
         overflow: 'auto',
-        padding: '32px',
+        padding: '32px 40px',
+        background: 'var(--bg)',
       }}>
         {children}
       </main>

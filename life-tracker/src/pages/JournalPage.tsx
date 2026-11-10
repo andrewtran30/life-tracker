@@ -113,27 +113,25 @@ export function JournalPage() {
 
   return (
     <div style={{ maxWidth: 700, margin: '0 auto' }}>
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28 }}>
         <div>
-          <h1 style={{ fontSize: '1.75rem', marginBottom: 4 }}>Journal</h1>
-          <p style={{ color: 'var(--fg-muted)' }}>Daily reflections, mood, and energy</p>
+          <h1 style={{ fontSize: '1.5rem', marginBottom: 2 }}>Journal</h1>
+          <p style={{ color: 'var(--fg-muted)', fontSize: '0.9rem' }}>Daily reflections, mood, and energy</p>
         </div>
         <button className="btn btn-primary" onClick={handleSave} disabled={saving}>
           <Save size={14} /> {saving ? 'Saving...' : saved ? 'Saved!' : 'Save Entry'}
         </button>
       </div>
 
-      {/* Date Navigation */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16,
-        marginBottom: 32,
+        marginBottom: 28,
       }}>
         <button className="btn btn-ghost" onClick={() => changeDate(-1)} style={{ padding: 8 }}>
           <ChevronLeft size={18} />
         </button>
         <div style={{ textAlign: 'center', minWidth: 200 }}>
-          <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '1.1rem' }}>{dateLabel}</div>
+          <div style={{ fontWeight: 600, fontSize: '1rem' }}>{dateLabel}</div>
           {isToday && <span style={{ fontSize: '0.75rem', color: 'var(--accent)' }}>Today</span>}
         </div>
         <button className="btn btn-ghost" onClick={() => changeDate(1)} disabled={isToday} style={{ padding: 8, opacity: isToday ? 0.3 : 1 }}>
@@ -141,11 +139,10 @@ export function JournalPage() {
         </button>
       </div>
 
-      {/* Mood & Energy */}
-      <div className="glass-card" style={{ marginBottom: 24 }}>
+      <div className="card" style={{ marginBottom: 20 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
-          <Smile size={18} color="var(--journal)" />
-          <h3 style={{ fontSize: '1rem' }}>How are you feeling?</h3>
+          <Smile size={16} color="var(--journal)" />
+          <h3 style={{ fontSize: '0.95rem' }}>How are you feeling?</h3>
         </div>
 
         <div style={{ marginBottom: 20 }}>
@@ -155,12 +152,13 @@ export function JournalPage() {
               {moodScore ? `${moodScore}/10 — ${MOOD_LABELS[moodScore]}` : 'Not set'}
             </span>
           </div>
-          <div style={{ display: 'flex', gap: 6 }}>
+          <div style={{ display: 'flex', gap: 4 }}>
             {[1,2,3,4,5,6,7,8,9,10].map(n => (
               <button key={n} onClick={() => setMoodScore(n)} style={{
-                flex: 1, height: 36, borderRadius: 'var(--radius-xs)', border: 'none', cursor: 'pointer',
-                background: n <= moodScore ? 'var(--journal)' : 'var(--bg-surface)',
-                color: n <= moodScore ? '#0e0a1a' : 'var(--fg-muted)',
+                flex: 1, height: 34, borderRadius: 'var(--radius-xs)', border: '1px solid var(--border)',
+                cursor: 'pointer',
+                background: n <= moodScore ? 'var(--journal)' : 'var(--bg-subtle)',
+                color: n <= moodScore ? '#fff' : 'var(--fg-muted)',
                 fontWeight: 600, fontSize: '0.8rem',
                 transition: 'all 0.15s',
               }}>
@@ -177,12 +175,13 @@ export function JournalPage() {
               {energyScore ? `${energyScore}/10 — ${ENERGY_LABELS[energyScore]}` : 'Not set'}
             </span>
           </div>
-          <div style={{ display: 'flex', gap: 6 }}>
+          <div style={{ display: 'flex', gap: 4 }}>
             {[1,2,3,4,5,6,7,8,9,10].map(n => (
               <button key={n} onClick={() => setEnergyScore(n)} style={{
-                flex: 1, height: 36, borderRadius: 'var(--radius-xs)', border: 'none', cursor: 'pointer',
-                background: n <= energyScore ? 'var(--accent)' : 'var(--bg-surface)',
-                color: n <= energyScore ? '#0e0a1a' : 'var(--fg-muted)',
+                flex: 1, height: 34, borderRadius: 'var(--radius-xs)', border: '1px solid var(--border)',
+                cursor: 'pointer',
+                background: n <= energyScore ? 'var(--accent)' : 'var(--bg-subtle)',
+                color: n <= energyScore ? '#fff' : 'var(--fg-muted)',
                 fontWeight: 600, fontSize: '0.8rem',
                 transition: 'all 0.15s',
               }}>
@@ -193,18 +192,17 @@ export function JournalPage() {
         </div>
       </div>
 
-      {/* Prompts */}
-      <div className="glass-card" style={{ marginBottom: 24 }}>
+      <div className="card" style={{ marginBottom: 20 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
-          <BookOpen size={18} color="var(--accent)" />
-          <h3 style={{ fontSize: '1rem' }}>Guided Prompts</h3>
+          <BookOpen size={16} color="var(--accent)" />
+          <h3 style={{ fontSize: '0.95rem' }}>Guided Prompts</h3>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
           {prompts.map(p => (
             <div key={p.id}>
               <label style={{
                 display: 'block', fontSize: '0.9rem', fontWeight: 500,
-                color: 'var(--fg-primary)', marginBottom: 8,
+                color: 'var(--fg)', marginBottom: 8,
               }}>
                 {p.text}
               </label>
@@ -220,9 +218,8 @@ export function JournalPage() {
         </div>
       </div>
 
-      {/* Freeform */}
-      <div className="glass-card">
-        <h3 style={{ fontSize: '1rem', marginBottom: 12 }}>Free Writing</h3>
+      <div className="card">
+        <h3 style={{ fontSize: '0.95rem', marginBottom: 12 }}>Free Writing</h3>
         <textarea
           className="input"
           placeholder="Anything else on your mind..."
