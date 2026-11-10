@@ -43,6 +43,8 @@ def exchange_code(code: str) -> dict:
             "redirect_uri": REDIRECT_URI,
         },
     )
+    print(f"WHOOP token exchange status: {resp.status_code}")
+    print(f"WHOOP token exchange response: {resp.text}")
     resp.raise_for_status()
     return resp.json()
 

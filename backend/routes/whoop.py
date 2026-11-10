@@ -46,8 +46,10 @@ def callback():
 
         return jsonify({"success": True, "whoop_user_id": profile["user_id"]})
     except Exception as e:
+        import traceback
         print(f"WHOOP callback error: {e}")
-        return jsonify({"error": "Failed to connect WHOOP account"}), 500
+        print(f"WHOOP callback traceback:\n{traceback.format_exc()}")
+        return jsonify({"error": f"Failed to connect WHOOP account: {e}"}), 500
 
 
 @whoop_bp.route("/sync", methods=["POST"])
