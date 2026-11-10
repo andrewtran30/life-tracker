@@ -10,12 +10,30 @@ export function WhoopCallbackPage() {
   const [error, setError] = useState('')
 
   useEffect(() => {
+    const oauthError = searchParams.get('error')
+    if (oauthError) {
+      setStatus('error')
+      setError(searchParams.get('error_description') || oauthError)
+      return
+    }
+
     const code = searchParams.get('code')
+    const returnedState = searchParams.get('state')
+    const savedState = sessionStorage.getItem('whoop_oauth_state')
+
     if (!code) {
       setStatus('error')
       setError('No authorization code received')
       return
     }
+
+    if (!returnedState || returnedState !== savedState) {
+      setStatus('error')
+      setError('OAuth state mismatch — please try connecting again')
+      return
+    }
+
+    sessionStorage.removeItem('whoop_oauth_state')
 
     api.whoop.exchangeCode(code)
       .then(() => {

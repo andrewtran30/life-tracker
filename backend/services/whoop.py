@@ -1,4 +1,5 @@
 import os
+import secrets
 import requests
 
 WHOOP_AUTH_URL = "https://api.prod.whoop.com/oauth/oauth2"
@@ -18,15 +19,17 @@ SCOPES = " ".join([
 ])
 
 
-def get_auth_url() -> str:
+def get_auth_url() -> tuple[str, str]:
+    state = secrets.token_urlsafe(32)
     params = {
         "client_id": CLIENT_ID,
         "redirect_uri": REDIRECT_URI,
         "response_type": "code",
         "scope": SCOPES,
+        "state": state,
     }
     qs = "&".join(f"{k}={requests.utils.quote(v)}" for k, v in params.items())
-    return f"{WHOOP_AUTH_URL}/auth?{qs}"
+    return f"{WHOOP_AUTH_URL}/auth?{qs}", state
 
 
 def exchange_code(code: str) -> dict:

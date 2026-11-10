@@ -43,7 +43,8 @@ export function HealthPage() {
 
   async function handleConnect() {
     try {
-      const { url } = await api.whoop.getAuthUrl()
+      const { url, state } = await api.whoop.getAuthUrl()
+      sessionStorage.setItem('whoop_oauth_state', state)
       window.location.href = url
     } catch (err) { console.error(err) }
   }

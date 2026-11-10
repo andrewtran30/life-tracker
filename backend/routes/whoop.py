@@ -12,7 +12,8 @@ whoop_bp = Blueprint("whoop", __name__, url_prefix="/api/whoop")
 @whoop_bp.route("/auth-url", methods=["GET"])
 @require_auth
 def auth_url():
-    return jsonify({"url": whoop.get_auth_url()})
+    url, state = whoop.get_auth_url()
+    return jsonify({"url": url, "state": state})
 
 
 @whoop_bp.route("/callback", methods=["POST"])
