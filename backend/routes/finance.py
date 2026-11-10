@@ -24,7 +24,7 @@ def import_csv():
         .select("id")
         .eq("id", account_id)
         .eq("user_id", g.user_id)
-        .maybe_single()
+        .limit(1)
         .execute()
     )
     if not account_resp.data:

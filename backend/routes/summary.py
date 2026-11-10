@@ -20,12 +20,12 @@ def today():
             .select("*")
             .eq("user_id", g.user_id)
             .eq("date", today_str)
-            .maybe_single()
+            .limit(1)
             .execute()
         )
 
         if existing.data:
-            return jsonify(existing.data)
+            return jsonify(existing.data[0])
 
         summary = generate_daily_summary(g.user_id, today_str)
         return jsonify(summary)

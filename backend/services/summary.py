@@ -124,8 +124,8 @@ Keep it concise (3-4 sentences for summary, 2-3 bullet recommendations). Be spec
 def generate_daily_summary(user_id: str, date: str) -> dict:
     yesterday = (datetime.fromisoformat(date) - timedelta(days=1)).strftime("%Y-%m-%d")
 
-    conn_resp = supabase_admin.table("whoop_connections").select("id").eq("user_id", user_id).maybe_single().execute()
-    connection_id = conn_resp.data["id"] if conn_resp.data else None
+    conn_resp = supabase_admin.table("whoop_connections").select("id").eq("user_id", user_id).limit(1).execute()
+    connection_id = conn_resp.data[0]["id"] if conn_resp.data else None
 
     sleep_data = None
     recovery_data = None

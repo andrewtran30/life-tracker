@@ -53,10 +53,10 @@ def sync():
             supabase_admin.table("whoop_connections")
             .select("*")
             .eq("user_id", g.user_id)
-            .maybe_single()
+            .limit(1)
             .execute()
         )
-        connection = conn_resp.data
+        connection = conn_resp.data[0] if conn_resp.data else None
         if not connection:
             return jsonify({"error": "No WHOOP connection found"}), 404
 
@@ -162,10 +162,10 @@ def status():
         supabase_admin.table("whoop_connections")
         .select("whoop_user_id, last_synced_at")
         .eq("user_id", g.user_id)
-        .maybe_single()
+        .limit(1)
         .execute()
     )
-    data = resp.data
+    data = resp.data[0] if resp.data else None
     if data:
         return jsonify({"connected": True, **data})
     return jsonify({"connected": False})
