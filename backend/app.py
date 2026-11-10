@@ -13,6 +13,12 @@ from routes.finance import finance_bp
 app = Flask(__name__)
 CORS(app, origins=[os.environ.get("FRONTEND_URL", "http://localhost:5173")], supports_credentials=True)
 
+
+@app.errorhandler(Exception)
+def handle_exception(e):
+    print(f"Unhandled error: {e}")
+    return jsonify({"error": "Internal server error"}), 500
+
 app.register_blueprint(whoop_bp)
 app.register_blueprint(summary_bp)
 app.register_blueprint(finance_bp)

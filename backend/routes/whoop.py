@@ -158,14 +158,18 @@ def sync():
 @whoop_bp.route("/status", methods=["GET"])
 @require_auth
 def status():
-    resp = (
-        supabase_admin.table("whoop_connections")
-        .select("whoop_user_id, last_synced_at")
-        .eq("user_id", g.user_id)
-        .limit(1)
-        .execute()
-    )
-    data = resp.data[0] if resp.data else None
-    if data:
-        return jsonify({"connected": True, **data})
-    return jsonify({"connected": False})
+    try:
+        resp = (
+            supabase_admin.table("whoop_connections")
+            .select("whoop_user_id, last_synced_at")
+            .eq("user_id", g.user_id)
+            .limit(1)
+            .execute()
+        )
+        data = resp.data[0] if resp.data else None
+        if data:
+            return jsonify({"connected": True, **data})
+        return jsonify({"connected": False})
+    except Exception as e:
+        print(f"WHOOP status error: {e}")
+        return jsonify({"connected": False})
