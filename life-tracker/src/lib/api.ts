@@ -3,7 +3,8 @@ import { supabase } from './supabase';
 const API_BASE = '/api';
 
 async function authFetch(path: string, options: RequestInit = {}) {
-  const { data: { session } } = await supabase.auth.getSession();
+  const { data: { session }, error } = await supabase.auth.getSession();
+  console.log('authFetch session:', !!session, 'error:', error, 'path:', path);
   if (!session) throw new Error('Not authenticated');
 
   const res = await fetch(`${API_BASE}${path}`, {
