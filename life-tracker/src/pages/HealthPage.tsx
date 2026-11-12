@@ -1,5 +1,5 @@
 import { Button, Card, Callout, ProgressBar, Spinner } from '@blueprintjs/core'
-import type { CSSProperties } from 'react'
+import type { CSSProperties, ComponentType } from 'react'
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { Heart, Moon, Activity, Zap, RefreshCw, Link2, Clock } from 'lucide-react'
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
@@ -23,7 +23,7 @@ async function loadWorkoutHistory(connectionId: string) {
   }
 }
 
-export function HealthPage() {
+export function HealthPage({ runningOnly = false }: { runningOnly?: boolean }) {
   const [connected, setConnected] = useState<boolean | null>(null)
   const [lastSynced, setLastSynced] = useState<string | null>(null)
   const [syncing, setSyncing] = useState(false)
@@ -127,15 +127,8 @@ export function HealthPage() {
   const todayCards = [
     { label: 'Sleep performance', value: today?.sleep_score, max: 100, unit: '%', color: 'var(--accent)', Icon: Moon },
     { label: 'Recovery', value: today?.recovery_score, max: 100, unit: '%', color: 'var(--health)', Icon: Heart },
-    { label: 'Day strain', value: today?.strain, max: 21, unit: '/ 21', color: 'var(--finance)', Icon: Zap },
+    { label: 'Day strain', value: today?.strain, max: 21, unit: '/ 21', color: 'var(--strain)', Icon: Zap },
   ]
-
-  const tooltipStyle = {
-    contentStyle: {
-      background: 'var(--bg-surface)', border: '1px solid var(--border)',
-      borderRadius: 8, fontSize: 13, color: 'var(--fg)',
-    },
-  }
 
   if (loading) return <div role="status" style={{ padding: 60, textAlign: 'center' }}><Spinner size={28} /><p style={{ color: 'var(--fg-muted)', marginTop: 16 }}>Loading health data...</p></div>
 
@@ -143,8 +136,8 @@ export function HealthPage() {
     <div style={{ maxWidth: 860 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28 }}>
         <div>
-          <h1 style={{ fontSize: '1.5rem', marginBottom: 2 }}>Health</h1>
-          <p style={{ color: 'var(--fg-muted)', fontSize: '0.9rem' }}>WHOOP recovery, sleep, and workout data</p>
+          <h1 style={{ fontSize: '1.5rem', marginBottom: 2 }}>{runningOnly ? 'Running tracker' : 'Overall health'}</h1>
+          <p style={{ color: 'var(--fg-muted)', fontSize: '0.9rem' }}>{runningOnly ? 'Your run history, details, and shoe mileage' : 'WHOOP recovery, sleep, and workout data'}</p>
         </div>
         {connected ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -176,7 +169,7 @@ export function HealthPage() {
         </Card>
       ) : (
         <>
-          <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
+          {!runningOnly && <><div style={{ marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
             <h2 style={{ fontSize: '1rem' }}>Today’s scores</h2>
             <span style={{ color: 'var(--fg-muted)', fontSize: '0.8rem' }}>{new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}</span>
           </div>
@@ -202,87 +195,61 @@ export function HealthPage() {
           {scoresError && <p role="alert" style={{ color: 'var(--danger)', marginBottom: 20 }}>{scoresError} <Button  onClick={loadData}>Retry scores</Button></p>}
 
           <div className="health-trends">
-          <Card className="panel" style={{ marginBottom: 20 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-              <Moon size={16} color="var(--accent)" />
-              <h3 style={{ fontSize: '0.95rem' }}>Sleep Performance</h3>
-            </div>
-            {sleepChartData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={180}>
-                <AreaChart data={sleepChartData}>
-                  <defs>
-                    <linearGradient id="sleepGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="var(--accent)" stopOpacity={0.15} />
-                      <stop offset="95%" stopColor="var(--accent)" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <XAxis dataKey="date" tick={{ fill: 'var(--fg-muted)', fontSize: 12 }} axisLine={false} tickLine={false} />
-                  <YAxis domain={[0, 100]} tick={{ fill: 'var(--fg-muted)', fontSize: 12 }} axisLine={false} tickLine={false} width={30} />
-                  <Tooltip {...tooltipStyle} formatter={v => [`${v}/100`, 'Sleep Score']} />
-                  <Area type="monotone" dataKey="score" stroke="var(--accent)" fill="url(#sleepGrad)" strokeWidth={2} dot={{ fill: 'var(--accent)', r: 3 }} />
-                </AreaChart>
-              </ResponsiveContainer>
-            ) : (
-              <p style={{ color: 'var(--fg-muted)', textAlign: 'center', padding: 16 }}>No sleep data yet. Hit Sync to pull from WHOOP.</p>
-            )}
-          </Card>
-
-          <Card className="panel" style={{ marginBottom: 20 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-              <Activity size={16} color="var(--health)" />
-              <h3 style={{ fontSize: '0.95rem' }}>Recovery</h3>
-            </div>
-            {recoveryChartData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={180}>
-                <AreaChart data={recoveryChartData}>
-                  <defs>
-                    <linearGradient id="recoveryGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="var(--health)" stopOpacity={0.15} />
-                      <stop offset="95%" stopColor="var(--health)" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <XAxis dataKey="date" tick={{ fill: 'var(--fg-muted)', fontSize: 12 }} axisLine={false} tickLine={false} />
-                  <YAxis domain={[0, 100]} tick={{ fill: 'var(--fg-muted)', fontSize: 12 }} axisLine={false} tickLine={false} width={30} />
-                  <Tooltip {...tooltipStyle} formatter={v => [`${v}%`, 'Recovery']} />
-                  <Area type="monotone" dataKey="score" stroke="var(--health)" fill="url(#recoveryGrad)" strokeWidth={2} dot={{ fill: 'var(--health)', r: 3 }} />
-                </AreaChart>
-              </ResponsiveContainer>
-            ) : (
-              <p style={{ color: 'var(--fg-muted)', textAlign: 'center', padding: 16 }}>No recovery data yet.</p>
-            )}
-          </Card>
-
-          <Card className="panel" style={{ marginBottom: 20 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-              <Zap size={16} color="var(--finance)" />
-              <h3 style={{ fontSize: '0.95rem' }}>Daily Strain</h3>
-            </div>
-            <p style={{ color: 'var(--fg-muted)', fontSize: '0.8rem', marginBottom: 16 }}>Last 7 days · WHOOP day strain, on a 0–21 scale</p>
-            {strainChartData.some(day => day.score != null) ? (
-              <ResponsiveContainer width="100%" height={180}>
-                <AreaChart data={strainChartData}>
-                  <defs>
-                    <linearGradient id="strainGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="var(--finance)" stopOpacity={0.2} />
-                      <stop offset="95%" stopColor="var(--finance)" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <XAxis dataKey="date" tick={{ fill: 'var(--fg-muted)', fontSize: 12 }} axisLine={false} tickLine={false} />
-                  <YAxis domain={[0, 21]} ticks={[0, 7, 14, 21]} tick={{ fill: 'var(--fg-muted)', fontSize: 12 }} axisLine={false} tickLine={false} width={30} />
-                  <Tooltip {...tooltipStyle} formatter={value => [typeof value === 'number' ? `${value.toFixed(1)} / 21` : '—', 'Day strain']} />
-                  <Area type="monotone" dataKey="score" stroke="var(--finance)" fill="url(#strainGrad)" strokeWidth={2} dot={{ fill: 'var(--finance)', r: 3 }} connectNulls={false} />
-                </AreaChart>
-              </ResponsiveContainer>
-            ) : (
-              <p style={{ color: 'var(--fg-muted)', textAlign: 'center', padding: 16 }}>{scoresError ? 'Daily strain is currently unavailable.' : 'No scored cycles in the last 7 days yet.'}</p>
-            )}
-          </Card>
-
+            <TrendChart id="sleep" title="Sleep Performance" Icon={Moon} color="var(--accent)" data={sleepChartData} max={100}
+              format={v => `${v}/100`} seriesName="Sleep Score" empty="No sleep data yet. Hit Sync to pull from WHOOP." />
+            <TrendChart id="recovery" title="Recovery" Icon={Activity} color="var(--health)" data={recoveryChartData} max={100}
+              format={v => `${v}%`} seriesName="Recovery" empty="No recovery data yet." />
+            <TrendChart id="strain" title="Daily Strain" Icon={Zap} color="var(--strain)" data={strainChartData} max={21} ticks={[0, 7, 14, 21]}
+              subtitle="Last 7 days · WHOOP day strain, on a 0–21 scale"
+              format={v => `${v.toFixed(1)} / 21`} seriesName="Day strain"
+              empty={scoresError ? 'Daily strain is currently unavailable.' : 'No scored cycles in the last 7 days yet.'} />
           </div>
 
-          <WorkoutsPanel workouts={workouts} onSaved={updated => setWorkouts(previous => previous.map(workout => workout.id === updated.id ? updated : workout))} />
+          </>}
+          <WorkoutsPanel runningOnly={runningOnly} workouts={workouts} onSaved={updated => setWorkouts(previous => previous.map(workout => workout.id === updated.id ? updated : workout))} />
         </>
       )}
     </div>
+  )
+}
+
+type TrendPoint = { date: string; score: number | null }
+
+const tooltipStyle = {
+  background: 'var(--bg-surface)', border: '1px solid var(--border)',
+  borderRadius: 8, fontSize: 13, color: 'var(--fg)',
+}
+const axisTick = { fill: 'var(--fg-muted)', fontSize: 12 }
+
+function TrendChart({ id, title, subtitle, Icon, color, data, max, ticks, format, seriesName, empty }: {
+  id: string; title: string; subtitle?: string; Icon: ComponentType<{ size?: number; color?: string }>; color: string
+  data: TrendPoint[]; max: number; ticks?: number[]; format: (value: number) => string; seriesName: string; empty: string
+}) {
+  return (
+    <Card className="panel" style={{ marginBottom: 20 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: subtitle ? 6 : 16 }}>
+        <Icon size={16} color={color} />
+        <h3 style={{ fontSize: '0.95rem' }}>{title}</h3>
+      </div>
+      {subtitle && <p style={{ color: 'var(--fg-muted)', fontSize: '0.8rem', marginBottom: 16 }}>{subtitle}</p>}
+      {data.some(point => point.score != null) ? (
+        <ResponsiveContainer width="100%" height={180}>
+          <AreaChart data={data}>
+            <defs>
+              <linearGradient id={`${id}Grad`} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor={color} stopOpacity={0.15} />
+                <stop offset="95%" stopColor={color} stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <XAxis dataKey="date" tick={axisTick} axisLine={false} tickLine={false} />
+            <YAxis domain={[0, max]} ticks={ticks} tick={axisTick} axisLine={false} tickLine={false} width={30} />
+            <Tooltip contentStyle={tooltipStyle} formatter={value => [typeof value === 'number' ? format(value) : '—', seriesName]} />
+            <Area type="monotone" dataKey="score" stroke={color} fill={`url(#${id}Grad)`} strokeWidth={2} dot={{ fill: color, r: 3 }} connectNulls={false} />
+          </AreaChart>
+        </ResponsiveContainer>
+      ) : (
+        <p style={{ color: 'var(--fg-muted)', textAlign: 'center', padding: 16 }}>{empty}</p>
+      )}
+    </Card>
   )
 }

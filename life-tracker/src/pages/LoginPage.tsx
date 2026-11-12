@@ -56,7 +56,7 @@ export function LoginPage({ onSignIn, onSignUp }: LoginPageProps) {
         </div>
         <div className="login-heading">
           <h1>{isSignUp ? 'Make space for a better day.' : 'Welcome back.'}</h1>
-          <p>{isSignUp ? 'Bring your health, finances, and reflections together.' : 'Your health, finances, and reflections in one place.'}</p>
+          <p>{isSignUp ? 'Track your WHOOP health data and runs in one place.' : 'Your health and running, all in one place.'}</p>
         </div>
         <form onSubmit={handleSubmit} className="login-form">
           {isSignUp && <FormGroup label="Display name" labelFor="display-name">

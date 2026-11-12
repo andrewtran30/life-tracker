@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { Button, Callout, Card, Dialog, DialogBody, FormGroup, InputGroup, NonIdealState, ProgressBar, Spinner, Tab, Tabs, Tag } from '@blueprintjs/core'
+import { useEffect, useMemo, useState } from 'react'
+import { Button, Callout, Card, Dialog, DialogBody, FormGroup, InputGroup, NonIdealState, ProgressBar, Spinner, Tab, Tabs, Tag, TextArea } from '@blueprintjs/core'
 import { ChevronRight, Footprints, Zap } from 'lucide-react'
 import { api } from '../lib/api'
 import type { WhoopWorkoutActivity, Workout, ShoeMileageSummary } from '../lib/types'
@@ -9,23 +9,29 @@ const ZONES = ['zero', 'one', 'two', 'three', 'four', 'five']
 const ZONE_COLORS = ['#8192a5', '#68b8ed', '#51d8ae', '#ffc46b', '#ff9b6b', '#ff727c']
 const WORKOUT_CATEGORIES = ['running', 'hiking', 'tennis', 'weightlifting', 'other']
 
+const SPORT_ALIASES: Record<string, string> = {
+  running: 'running', 'trail running': 'running', '0': 'running',
+  hiking: 'hiking', rucking: 'hiking', 'hiking rucking': 'hiking', '52': 'hiking',
+  walking: 'walking', 'dog walking': 'walking', 'stroller walking': 'walking', '63': 'walking',
+  tennis: 'tennis', '34': 'tennis',
+  weightlifting: 'weightlifting', 'weight lifting': 'weightlifting', '45': 'weightlifting',
+}
+const SHOE_SPORTS = ['running', 'walking', 'hiking']
+
 function sportKey(sport: string | null) { return sport?.trim().toLowerCase() || 'activity' }
+/** Canonical sport family; WHOOP may send names in different spellings or a numeric sport id. */
+function sportFamily(sport: string | null) {
+  return SPORT_ALIASES[sportKey(sport).replace(/[-_/]/g, ' ').replace(/\s+/g, ' ')] ?? 'other'
+}
 function workoutCategory(sport: string | null) {
-  const name = sportKey(sport).replace(/[-_/]/g, ' ').replace(/\s+/g, ' ')
-  if (['running', 'trail running', '0'].includes(name)) return 'running'
-  if (['hiking', 'rucking', 'hiking rucking', '52'].includes(name)) return 'hiking'
-  if (['tennis', '34'].includes(name)) return 'tennis'
-  if (['weightlifting', 'weight lifting', '45'].includes(name)) return 'weightlifting'
-  return 'other'
+  const family = sportFamily(sport)
+  return WORKOUT_CATEGORIES.includes(family) ? family : 'other'
 }
 function sportLabel(sport: string | null) {
   if (sport === '0') return 'Running'
   return sportKey(sport).replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
 }
-function tracksShoes(workout: Workout) {
-  const sport = sportKey(workout.sport_name).replace(/[-_/]/g, ' ').replace(/\s+/g, ' ')
-  return ['running', 'trail running', '0', 'walking', 'dog walking', 'stroller walking', '63', 'hiking', 'rucking', 'hiking rucking', '52'].includes(sport)
-}
+function tracksShoes(workout: Workout) { return SHOE_SPORTS.includes(sportFamily(workout.sport_name)) }
 function formatNumber(value: number | null | undefined, unit = '', decimals = 0) {
   return value == null ? '—' : `${value.toFixed(decimals)}${unit}`
 }
@@ -34,7 +40,8 @@ function durationLabel(milliseconds: number) {
   return minutes >= 60 ? `${Math.floor(minutes / 60)}h ${minutes % 60}m` : `${minutes} min`
 }
 
-export function WorkoutsPanel({ workouts, onSaved }: { workouts: Workout[]; onSaved: (workout: Workout) => void }) {
+export function WorkoutsPanel({ workouts: allWorkouts, onSaved, runningOnly = false }: { workouts: Workout[]; onSaved: (workout: Workout) => void; runningOnly?: boolean }) {
+  const workouts = useMemo(() => runningOnly ? allWorkouts.filter(workout => workoutCategory(workout.sport_name) === 'running') : allWorkouts, [allWorkouts, runningOnly])
   const [view, setView] = useState('workouts')
   const [shoeSummary, setShoeSummary] = useState<ShoeMileageSummary | null>(null)
   const [shoeError, setShoeError] = useState('')
@@ -77,8 +84,8 @@ export function WorkoutsPanel({ workouts, onSaved }: { workouts: Workout[]; onSa
     <Card className="panel">
       <Tabs id="activity-and-gear" selectedTabId={view} onChange={id => setView(String(id))} renderActiveTabPanelOnly>
         <Tab id="workouts" title="Workouts" panel={<>
-      <div className="workouts-heading"><div><h3>Workout history</h3><p>Explore saved activities and assign shoes to runs, walks, and hikes.</p></div><Tag minimal>{workouts.length} activities</Tag></div>
-      {workouts.length ? <Tabs id="workout-types" className="workout-tabs" selectedTabId={selectedTab} onChange={id => { setActiveTab(String(id)); setVisibleCount(20) }} renderActiveTabPanelOnly>
+      <div className="workouts-heading"><div><h3>{runningOnly ? 'Run history' : 'Workout history'}</h3><p>{runningOnly ? 'Open a run to log your pace, splits, shoes, and how you felt.' : 'Explore saved activities and assign shoes to runs, walks, and hikes.'}</p></div><Tag minimal>{workouts.length} activities</Tag></div>
+      {runningOnly ? workoutList(workouts) : workouts.length ? <Tabs id="workout-types" className="workout-tabs" selectedTabId={selectedTab} onChange={id => { setActiveTab(String(id)); setVisibleCount(20) }} renderActiveTabPanelOnly>
         <Tab id="all" title={`All (${workouts.length})`} panel={workoutList(workouts)} />
         {WORKOUT_CATEGORIES.map(type => {
           const items = workouts.filter(w => workoutCategory(w.sport_name) === type)
@@ -114,6 +121,9 @@ function WorkoutDetails({ workout, shoes, onClose, onSaved }: { workout: Workout
   const [retry, setRetry] = useState(0)
   const [runningShoes, setRunningShoes] = useState(workout.running_shoes ?? '')
   const [runningMiles, setRunningMiles] = useState(workout.running_miles == null ? '' : String(workout.running_miles))
+  const [pace, setPace] = useState(workout.running_pace ?? '')
+  const [splits, setSplits] = useState(workout.running_splits ?? '')
+  const [feeling, setFeeling] = useState(workout.running_feeling ?? '')
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
   const [saved, setSaved] = useState(false)
@@ -138,7 +148,7 @@ function WorkoutDetails({ workout, shoes, onClose, onSaved }: { workout: Workout
     }
     setSaving(true)
     try {
-      const result = await api.whoop.saveRunDetails(workout.id, { running_shoes: runningShoes.trim() || null, running_miles: miles })
+      const result = await api.whoop.saveRunDetails(workout.id, { running_shoes: runningShoes.trim() || null, running_miles: miles, running_pace: pace.trim() || null, running_splits: splits.trim() || null, running_feeling: feeling.trim() || null })
       onSaved(result.workout)
       setSaved(true)
     } catch (err) { setSaveError(err instanceof Error ? err.message : 'Unable to save activity details.') }
@@ -188,6 +198,11 @@ function WorkoutDetails({ workout, shoes, onClose, onSaved }: { workout: Workout
         <FormGroup label="Distance (miles)" labelFor="running-miles" helperText="Enter your own distance; leave blank to use WHOOP distance in the workout list.">
           <InputGroup id="running-miles" type="number" min="0" max="1000" step="any" placeholder="e.g. 5.25" value={runningMiles} onChange={event => { setRunningMiles(event.target.value); setSaved(false) }} disabled={saving} />
         </FormGroup>
+        {workoutCategory(workout.sport_name) === 'running' && <>
+          <FormGroup label="Average pace per mile" labelFor="running-pace" helperText="For example, 8:35 per mile."><InputGroup id="running-pace" placeholder="8:35" maxLength={40} value={pace} onChange={event => { setPace(event.target.value); setSaved(false) }} disabled={saving} /></FormGroup>
+          <FormGroup label="Mile splits" labelFor="running-splits" helperText="Enter each mile and its time, one per line."><TextArea id="running-splits" fill maxLength={4000} placeholder={'Mile 1: 8:45\nMile 2: 8:30'} value={splits} onChange={event => { setSplits(event.target.value); setSaved(false) }} disabled={saving} /></FormGroup>
+          <FormGroup label="How did you feel?" labelFor="running-feeling"><TextArea id="running-feeling" fill maxLength={4000} placeholder="Notes on effort, energy, or anything else" value={feeling} onChange={event => { setFeeling(event.target.value); setSaved(false) }} disabled={saving} /></FormGroup>
+        </>}
         {saveError && <Callout intent="danger" role="alert">{saveError}</Callout>}
         {saved && <Callout intent="success" role="status" icon="tick">Activity details saved.</Callout>}
         <Button intent="primary" type="submit" loading={saving} icon="floppy-disk">Save activity details</Button>

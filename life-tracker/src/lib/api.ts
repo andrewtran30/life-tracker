@@ -4,8 +4,7 @@ import type { WhoopDailyScore, WhoopWorkoutActivity, Workout, ShoeMileageSummary
 const API_BASE = '/api';
 
 async function authFetch(path: string, options: RequestInit = {}) {
-  const { data: { session }, error } = await supabase.auth.getSession();
-  console.log('authFetch session:', !!session, 'error:', error, 'path:', path);
+  const { data: { session } } = await supabase.auth.getSession();
   if (!session) throw new Error('Not authenticated');
 
   const res = await fetch(`${API_BASE}${path}`, {
@@ -34,15 +33,7 @@ export const api = {
     shoes: (): Promise<ShoeMileageSummary> => authFetch('/whoop/shoes'),
     dailyScores: (): Promise<{ days: WhoopDailyScore[] }> => authFetch('/whoop/daily-scores'),
     workoutDetails: (id: string): Promise<{ workout: Workout; activity: WhoopWorkoutActivity; source: 'archive' | 'whoop'; archived_at?: string }> => authFetch(`/whoop/workouts/${encodeURIComponent(id)}`),
-    saveRunDetails: (id: string, details: { running_shoes: string | null; running_miles: number | null }): Promise<{ workout: Workout }> =>
+    saveRunDetails: (id: string, details: { running_shoes: string | null; running_miles: number | null; running_pace?: string | null; running_splits?: string | null; running_feeling?: string | null }): Promise<{ workout: Workout }> =>
       authFetch(`/whoop/workouts/${encodeURIComponent(id)}/run-details`, { method: 'PATCH', body: JSON.stringify(details) }),
-  },
-  summary: {
-    getToday: () => authFetch('/summary/today'),
-    regenerate: () => authFetch('/summary/regenerate', { method: 'POST' }),
-  },
-  finance: {
-    importCsv: (csvContent: string, accountId: string) =>
-      authFetch('/finance/import-csv', { method: 'POST', body: JSON.stringify({ csvContent, accountId }) }),
   },
 };

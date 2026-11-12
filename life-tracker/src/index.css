@@ -15,10 +15,7 @@
   --accent-fg: #a9d4ff;
   --health: #51d8ae;
   --health-light: #1c3e38;
-  --finance: #ffc46b;
-  --finance-light: #443720;
-  --journal: #c4a3ff;
-  --journal-light: #362e4c;
+  --strain: #ffc46b;
   --danger: #ff9696;
   --danger-light: #492d34;
   --success: #51d8ae;
@@ -184,4 +181,24 @@ textarea.bp6-input { resize: vertical; min-height: 80px; line-height: 1.7; paddi
 .shoe-breakdown > div { display: flex; justify-content: space-between; font-size: 12px; }
 .shoe-breakdown dt { color: var(--fg-muted); }
 .shoe-breakdown dd { margin: 0; color: var(--fg-secondary); font-variant-numeric: tabular-nums; }
-.shoe-missing { color: var(--finance); font-size: 12px; margin-top: 10px; }
+.shoe-missing { color: var(--strain); font-size: 12px; margin-top: 10px; }
+
+/* Blueprint workspace shell, following TC Automation. */
+.app-shell { display:flex; flex-direction:column; min-height:100vh; }
+.app-navbar.bp6-navbar { position:sticky; top:0; z-index:20; background:#1c2127; box-shadow:0 1px 0 #383e47; }
+.top-brand { display:flex; align-items:center; gap:8px; font-weight:700; }
+.top-brand-mark { width:26px; height:26px; display:grid; place-items:center; border-radius:6px; background:linear-gradient(135deg,#2d72d2,#7961db); color:white; }
+.top-subtitle { color:#abb3bf; border-left:1px solid #383e47; padding-left:16px; margin-left:16px; font-size:12px; }
+.top-user { color:#abb3bf; margin-right:12px; }
+.app-body { display:flex; flex:1; min-height:0; }
+.sidebar { position:sticky; top:50px; height:calc(100vh - 50px); background:#1c2127; padding:0; border-color:#383e47; }
+.nav-caption { margin:0; padding:14px 16px 4px; font-size:11px; letter-spacing:.08em; color:#abb3bf; }
+.workspace-nav { padding:8px; gap:2px; }
+.nav-item { padding:8px 10px; gap:10px; border:0; border-radius:4px; color:#abb3bf; }
+.nav-item strong { color:inherit; font-size:14px; }
+.nav-item.active { background:rgba(76,144,240,.14); color:#4c90f0; }
+.nav-item.active strong { color:inherit; }
+.sidebar-footnote { margin-top:auto; padding:16px; border-top:1px solid #383e47; color:#abb3bf; font-size:12px; }
+.page-content { flex:1; min-width:0; padding:22px 28px 48px; background:#111418; }
+.page-content > div { max-width:1500px !important; }
+@media(max-width:760px) { .app-body { flex-direction:column; } .sidebar { width:100%; height:auto; position:static; } .workspace-nav { flex-direction:row; } .nav-item { flex-direction:row; justify-content:center; } .sidebar-footnote,.top-subtitle { display:none; } .page-content { padding:22px 16px 40px; } }

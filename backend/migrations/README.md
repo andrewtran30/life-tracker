@@ -69,3 +69,7 @@ an interruption. It refreshes expired credentials and paces requests to WHOOP.
 First-time sync requests all available history. Subsequent syncs cover at least
 seven days, extending back to the previous successful sync to avoid gaps.
 Workout details can be read from the archive without WHOOP API access.
+
+## Running tracker notes
+
+Apply `backend/supabase/migrations/20261110225557_running_tracker_notes.sql` after the existing workout run log migration. It adds optional manually entered pace, splits, and feeling fields to workouts. These fields are preserved during WHOOP sync and use the existing workout ownership protections.

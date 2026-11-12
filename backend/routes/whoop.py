@@ -13,6 +13,25 @@ from services.shoes import shoe_activity_type, summarize_shoes
 whoop_bp = Blueprint("whoop", __name__, url_prefix="/api/whoop")
 
 
+def _parse_timestamp(value):
+    parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
+
+
+def _expires_at(tokens):
+    return (datetime.now(timezone.utc) + timedelta(seconds=tokens["expires_in"])).isoformat()
+
+
+def _whoop_error(error, default, unauthorized, rate_limited, not_found=None):
+    """Map a failed WHOOP request to a user-facing 502 response."""
+    if not isinstance(error, requests.HTTPError):
+        return jsonify({"error": "Unable to reach WHOOP. Please try again."}), 502
+    status = error.response.status_code if error.response is not None else None
+    print(f"WHOOP upstream HTTP status: {status}")
+    message = {401: unauthorized, 403: unauthorized, 429: rate_limited, 404: not_found}.get(status) or default
+    return jsonify({"error": message}), 502
+
+
 @whoop_bp.route("/shoes", methods=["GET"])
 @require_auth
 def shoe_mileage():
@@ -48,7 +67,7 @@ def _owned_workout(workout_id):
 
 
 def _validate_run_details(data):
-    if not isinstance(data, dict) or set(data) != {"running_shoes", "running_miles"}:
+    if not isinstance(data, dict) or not {"running_shoes", "running_miles"} <= set(data) or set(data) - {"running_shoes", "running_miles", "running_pace", "running_splits", "running_feeling"}:
         raise ValueError("Provide running shoes and mileage.")
     shoes, miles = data["running_shoes"], data["running_miles"]
     if shoes is not None and (not isinstance(shoes, str) or len(shoes) > 200):
@@ -56,8 +75,15 @@ def _validate_run_details(data):
     if miles is not None and (isinstance(miles, bool) or not isinstance(miles, (int, float))
                               or not math.isfinite(miles) or not 0 <= miles <= 1000):
         raise ValueError("Mileage must be a number between 0 and 1,000, or left blank.")
-    return {"running_shoes": shoes.strip() or None if shoes is not None else None,
-            "running_miles": miles}
+    updates = {"running_shoes": shoes.strip() or None if shoes is not None else None,
+               "running_miles": miles}
+    for field, limit in (("running_pace", 40), ("running_splits", 4000), ("running_feeling", 4000)):
+        if field in data:
+            value = data[field]
+            if value is not None and (not isinstance(value, str) or len(value) > limit):
+                raise ValueError(f"{field.replace('_', ' ').capitalize()} must be text of {limit} characters or fewer.")
+            updates[field] = value.strip() or None if value is not None else None
+    return updates
 
 
 @whoop_bp.route("/workouts/<uuid:workout_id>", methods=["GET"])
@@ -74,18 +100,11 @@ def workout_detail(workout_id):
         activity = whoop.fetch_workout(access_token, workout["whoop_workout_id"])
         whoop_archive.store_records(workout["connection_id"], "workout", [activity])
         return jsonify({"workout": workout, "activity": activity, "source": "whoop"})
-    except requests.HTTPError as error:
-        status = error.response.status_code if error.response is not None else None
-        message = "Unable to load activity details from WHOOP. Please try again."
-        if status == 404:
-            message = "This activity is no longer available in WHOOP."
-        elif status in (401, 403):
-            message = "Please reconnect WHOOP to view activity details."
-        elif status == 429:
-            message = "WHOOP rate limit reached. Please wait before trying again."
-        return jsonify({"error": message}), 502
-    except requests.RequestException:
-        return jsonify({"error": "Unable to reach WHOOP. Please try again."}), 502
+    except requests.RequestException as error:
+        return _whoop_error(error, "Unable to load activity details from WHOOP. Please try again.",
+                            unauthorized="Please reconnect WHOOP to view activity details.",
+                            rate_limited="WHOOP rate limit reached. Please wait before trying again.",
+                            not_found="This activity is no longer available in WHOOP.")
     except Exception as error:
         print(f"WHOOP workout details error type: {type(error).__name__}")
         return jsonify({"error": "Unable to load workout details. Please try again."}), 500
@@ -140,9 +159,7 @@ def callback():
             "user_id": g.user_id,
             "access_token_encrypted": tokens["access_token"],
             "refresh_token_encrypted": tokens["refresh_token"],
-            "token_expires_at": (
-                datetime.now(timezone.utc) + timedelta(seconds=tokens["expires_in"])
-            ).isoformat(),
+            "token_expires_at": _expires_at(tokens),
             "whoop_user_id": str(profile["user_id"]),
         }
         supabase_admin.table("whoop_connections").upsert(
@@ -170,19 +187,14 @@ def _get_connection_access_token():
 
     access_token = connection["access_token_encrypted"]
 
-    expires_at = datetime.fromisoformat(connection["token_expires_at"].replace("Z", "+00:00"))
-    if expires_at.tzinfo is None:
-        expires_at = expires_at.replace(tzinfo=timezone.utc)
-    if expires_at <= datetime.now(timezone.utc):
+    if _parse_timestamp(connection["token_expires_at"]) <= datetime.now(timezone.utc):
         new_tokens = whoop.refresh_token(connection["refresh_token_encrypted"])
         access_token = new_tokens["access_token"]
         supabase_admin.table("whoop_connections").update(
             {
                 "access_token_encrypted": new_tokens["access_token"],
                 "refresh_token_encrypted": new_tokens["refresh_token"],
-                "token_expires_at": (
-                    datetime.now(timezone.utc) + timedelta(seconds=new_tokens["expires_in"])
-                ).isoformat(),
+                "token_expires_at": _expires_at(new_tokens),
             }
         ).eq("id", connection["id"]).execute()
 
@@ -201,17 +213,10 @@ def daily_scores():
         sleeps = whoop.fetch_sleep(access_token, start_date)["records"]
         recoveries = whoop.fetch_recovery(access_token, start_date)["records"]
         return jsonify({"days": whoop.daily_scores(cycles, sleeps, recoveries)})
-    except requests.HTTPError as error:
-        status = error.response.status_code if error.response is not None else None
-        if status in (401, 403):
-            message = "Please reconnect WHOOP to grant access to daily scores and cycles."
-        elif status == 429:
-            message = "WHOOP rate limit reached. Please wait before refreshing daily scores."
-        else:
-            message = "Unable to load daily scores from WHOOP. Please try again."
-        return jsonify({"error": message}), 502
-    except requests.RequestException:
-        return jsonify({"error": "Unable to reach WHOOP. Please try again."}), 502
+    except requests.RequestException as error:
+        return _whoop_error(error, "Unable to load daily scores from WHOOP. Please try again.",
+                            unauthorized="Please reconnect WHOOP to grant access to daily scores and cycles.",
+                            rate_limited="WHOOP rate limit reached. Please wait before refreshing daily scores.")
     except Exception as error:
         print(f"WHOOP daily scores error type: {type(error).__name__}")
         return jsonify({"error": "Unable to load daily WHOOP scores. Please try again."}), 500
@@ -227,43 +232,25 @@ def sync():
 
         start_date = None
         if connection.get("last_synced_at"):
-            last_sync = datetime.fromisoformat(connection["last_synced_at"].replace("Z", "+00:00"))
-            if last_sync.tzinfo is None:
-                last_sync = last_sync.replace(tzinfo=timezone.utc)
+            last_sync = _parse_timestamp(connection["last_synced_at"])
             start_date = min(datetime.now(timezone.utc) - timedelta(days=7), last_sync - timedelta(days=1)).strftime("%Y-%m-%d")
 
-        sleep_data = whoop.fetch_sleep(access_token, start_date)
-        recovery_data = whoop.fetch_recovery(access_token, start_date)
-        workout_data = whoop.fetch_workouts(access_token, start_date)
-
-        cycle_data = whoop.fetch_cycles(access_token, start_date)
-        cid = connection["id"]
-        for kind, data in (("sleep", sleep_data), ("recovery", recovery_data), ("workout", workout_data), ("cycle", cycle_data)):
-            whoop_archive.store_records(cid, kind, data.get("records", []))
+        fetchers = {"sleep": whoop.fetch_sleep, "recovery": whoop.fetch_recovery,
+                    "workout": whoop.fetch_workouts, "cycle": whoop.fetch_cycles}
+        records = {kind: fetch(access_token, start_date)["records"] for kind, fetch in fetchers.items()}
+        for kind, items in records.items():
+            whoop_archive.store_records(connection["id"], kind, items)
 
         supabase_admin.table("whoop_connections").update(
             {"last_synced_at": datetime.now(timezone.utc).isoformat()}
-        ).eq("id", cid).execute()
+        ).eq("id", connection["id"]).execute()
 
-        return jsonify({
-            "synced": {
-                "sleep": len(sleep_data.get("records", [])),
-                "recovery": len(recovery_data.get("records", [])),
-                "workouts": len(workout_data.get("records", [])),
-            }
-        })
-    except requests.HTTPError as error:
-        status_code = error.response.status_code if error.response is not None else None
-        print(f"WHOOP sync upstream HTTP status: {status_code}")
-        message = "WHOOP rejected the data request. Please try syncing again."
-        if status_code in (401, 403):
-            message = "WHOOP authorization expired or lacks permission. Please reconnect your WHOOP account."
-        elif status_code == 429:
-            message = "WHOOP rate limit reached. Please wait before syncing again."
-        return jsonify({"error": message}), 502
+        return jsonify({"synced": {"sleep": len(records["sleep"]), "recovery": len(records["recovery"]),
+                                   "workouts": len(records["workout"])}})
     except requests.RequestException as error:
-        print(f"WHOOP sync network error type: {type(error).__name__}")
-        return jsonify({"error": "Unable to reach WHOOP. Please try syncing again."}), 502
+        return _whoop_error(error, "WHOOP rejected the data request. Please try syncing again.",
+                            unauthorized="WHOOP authorization expired or lacks permission. Please reconnect your WHOOP account.",
+                            rate_limited="WHOOP rate limit reached. Please wait before syncing again.")
     except Exception as error:
         error_code = getattr(error, "code", None)
         print(f"WHOOP sync error type: {type(error).__name__}, code: {error_code}")
